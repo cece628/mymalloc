@@ -1,153 +1,123 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include "mymalloc.h"
-#define malloc(x) mymalloc(x)
-#define free(x) myfree(x)
+/*use __FILE__,__LINE__ */
+/*all: test0 test1 test2
+test:test0.c...
+gcc -o test0...
 
+test1:test1.c..
+gcc -o test1.c
 
-int main()
-{
-    int res,size,ch,j,i;
-    int *p;
-    cnt1=0;
-    cnt2=0;
-    total=5000;
-    available1=2500;
-    available2=2500;
-    for(i=0;i<5000;i++)
-       myblock[i]=0;
-    x=-1;
-    do
-    {
-         printf("Choose an action:\n1.Allocate Memory\n2.View Tables\n3.Free Memory\n4.Exit\nYour Choice:");
-         scanf("%d",&ch);
-         switch(ch)
-         {
-                   case 1:x=x+1;
-                          printf("Enter table name:");
-                          scanf("%s",name);
-                          strcpy(saved_names[x],name);
-                          printf("Enter size:");
-                          scanf("%d",&size);
-                          saved_sizes[x]=size;
-                          p=malloc(size);
-/*                          printf("\nWhats inside is:");
-                          if(size<100){
-                          for(i=pos;i<pos+size;i++)
-                             printf("pos[%d]=%d",i,*(p+i));
-                          printf("\n");
-                          }
-                          else{
-                          for(i=pos;i>pos-size;i--)
-                             printf("pos[%d]=%d",i,*(p+i));
-                          printf("\n");
-                          }
+extra credit: calloc, extra text cases
 */
-                          if(size<100)
-                             cnt1=cnt1+size; 
-                          else
-                             cnt2=cnt2+size;  
-                          printf("Table created!\n");
-                          break;
-                   case 2:
-                          printf("Your tables:\n");
-                          for(j=0;j<=x;j++)
-                             if(saved_sizes[j]!=0)
-                                printf("%s with size:%d saved between %d and %d\n",saved_names[j],saved_sizes[j],saved_pos[j][0],saved_pos[j][1]);
-                          break;
-                   case 3:printf("Enter table's name you want to free:");
-                          scanf("%s",name);
-                          p=myblock;
-                          temp=-1;
-                          for(i=0;i<10;i++)
-                          {
-                             res=strcmp(saved_names[i],name);
-                             if(res==0)
-                             {
-                                temp=i;
-                                p=p+saved_pos[i][0];
-                             }
-                          }
-                          free(p);
-                          break;
-                   case 4:printf("Bye...");
-                          break;
-                   default:printf("Try again\n");
-                          break;                                      
-         }        
-    }while(ch!=4);
-    return 0;
-}                 
-                          
-int *mymalloc(int size)
-{
-    int *c;
-    int i;
-    int cnt_temp;
-    c=myblock;
-    if(size>total){
-        printf("Sorry not enough available memory");
-        exit(1);}
-    else if(((size>100) && (size>available1)) || ((size<100) && (size>available2))){
-         printf("Sorry not enough memory left");
-         exit(2);} 
-    else
-        if(size<100){
-                    cnt_temp=0;
-                    pos=cnt_temp+cnt1;
-                    saved_pos[x][0]=pos;
-                    saved_pos[x][1]=pos+size-1;
-                    for(i=pos;i<(pos+size);i++)
-                       *(c+i)=1;  
-                    available1=available1-size;                   
-                    return c;
-                    }
-        else{
-                    cnt_temp=4999;
-                    pos=cnt_temp-cnt2;
-                    saved_pos[x][0]=pos;
-                    saved_pos[x][1]=pos-size;
-                    for(i=pos;i>(pos-size);i--)
-                       myblock[i]=1;
-                    available2=available2-size;
-                    return c;
-            }
-} 
 
-void myfree(int *p)
-{
-     int i,flag;
-     if(saved_sizes[temp]==0)
-        printf("Memory is already free\n");
-     flag=0;
-     if(temp==-1)
-        printf("There is no such array\n");
-     else
-     {
-     if(saved_sizes[temp]<100)
-     {
-        for(i=saved_pos[temp][0];i<=saved_pos[temp][1];i++)
-        {
-            if(*(p+i)==1){
-               *(p+i)=0;
-               flag=1;}
-        }
-        saved_sizes[temp]=0;
-     }
-     else
-     {
-        for(i=0;i<saved_sizes[temp];i++)
-        {
-            if(*(p-i)==1){
-               *(p-i)=0;
-               flag=1;}
-        }
-        saved_sizes[temp]=0;
-     }   
-     }   
-     if(flag==1)
-        printf("Memory has been freed\n");
+#include <string.h>
+#include "mymalloc.h" 
+#define memSize 5000 //whole memory size
+#define blockSize (sizeof(struct blockMem)) //each block size
+#define numOfBlock (memSize/blockSize)
+
+
+static void *blockInd[memSize/blockSize];
+
+/*//use link list to access each block of memory, move to .h file
+struct blockMem{
+  int size; //size of the block
+  struct blockMem *next; //struct pointer within the block
+  int ifFree; //int value to check if the block is freed. 1 for yes and 0 for no
+};
+*/
+
+static int i=0;
+
+//check if have free block to re-use free space
+int freeBlock(blockMem *ptr){
+  int ifFree = 0; //not free at first
+  for(i=0;i< (numOfBlock);i++){
+    if(ptr == blockInd[i] && !ptr->ifFree){
+	ifFree = 1;//already free
+      	return 1; 
+	}
+  }
+  return 0;//no freeBlock
 }
-     
+
+//get the index of the free block
+static int getFree(){
+	int i;
+	for(i=0; i< (numOfBlock);i++){
+		if(blockInd[i] == 0)
+			return i;
+	}
+	return 1;
+}
+
+
+
+void *mymalloc(unsigned int size, char *file, unsigned int line){
+
+  struct blockMem *next, *new;
+  static int firstCall=0; //global int to check if the memory has been called. 1 for yes and 0 for no
+  static struct blockMem *head, *tail;
+  if(size==0){
+    printf("Fatal error in malloc call from line %d, in file %s\n", line, file);
+    return -1;
+  }
+
+
+  if(firstCall=0){//fist call
+    //use head for the beginning of the block
+    //creat the whole block
+    head->next=0;
+    head->size=5000-blockSize;
+    firstCall=1;
+    head->ifFree=0;
+  }
+
+  //now they have been initialized
+  //do stuff
+
+  new = head;
+  do{
+    if(new->size < size|| !new->ifFree){//not enough memory size or not freed , move to next
+      new = new->next;
+    }else if(new->size < (size + blockSize) ){//enough memory, return the head
+      new->ifFree = 0;
+      return (char*)new + blockSize ;
+    }else{//need memory, create the head
+      next = (struct blockMem*)((char*)new + blockSize);
+      next->next = new->next;
+      next->size = new->size - blockSize;
+      new->size = size;
+      next->ifFree = 0;//fail
+      new ->ifFree = 0;
+      new ->next = next;
+	if(new==tail)
+		tail=next;
+	else
+		tail=tail;
+	blockInd[getFree()] = next;
+      return (char*)new + blockSize;
+    }
+}while(new != 0);
+//saturation situation
+//if((new = (struct blockMem*)sbrk(5000+size))==(void *)){
+//  return 0;
+//}
+//if the head if null, means not enough memory
+printf("error: not enough memory available from line: %d in file: %s. \n", line, file);
+return 0;
+  
+}
+
+void myfree(void *p, char *file, int line){
+  struct blockMem *prev, *ptr, *new;
+  ptr = (struct blockMem*)((char*)p-blockSize);
+
+  if(p==NULL){//if the pointer is NULL
+    printf("error: free NULL pointer from line: %d in file: %s. \n", line, file);
+    return -1;
+  }else if(ptr->ifFree){//if the pinter is free==the pointer has never been allocated
+    printf("error: can't free not allocated memory from line: %d in file: %s. \n", line, file);
+  }else if(freeBlock(ptr)==1){//not free block
+    printf("error: can't free memory not in the malloc from line: %d in file: %s. \n", line, file);
+  }
+}

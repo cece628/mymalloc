@@ -1,11 +1,24 @@
-#ifndef MYMALLOC_H_
-#define MYMALLOC_H_
+#ifndef MYMALLOC_H
+#define MYMALLOC_H
 
-int *mymalloc(int size);
-int myblock[5000];
-char saved_names[100][20],name[20];
-int cnt1,cnt2,x,total,pos,available1,available2,temp;
-int saved_sizes[100],saved_pos[100][2];
-void myfree(int *p);
+#include <stdlib.h>
+#include <stdio.h>
+#define malloc(x) mymalloc((x),__FILE__,__LINE__)//!!!!in .h file
+
+typedef struct blockMem blockMem;
+
+//use link list to access each block of memory
+struct blockMem{
+  int size; //size of the block
+  struct blockMem *next, *prev; //struct pointer within the block
+  int ifFree; //int value to check if the block is freed. 1 for yes and 0 for no
+};
+
+void *mymalloc(unsigned int size, char *file, unsigned int line);
+void myfree(void *p, char *file, int line);
+int freeBlock(blockMem *ptr);
+//void *mycalloc(int ct, unsigned int size, char *file, int line);
+//void *myrealloc(void *p, unsigned int size, char *file, int line);
+size_t getSize(void * p);
 
 #endif
