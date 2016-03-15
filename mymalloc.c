@@ -1,59 +1,153 @@
-/*use __FILE__,__LINE__ */
-/*all: test0 test1 test2
-test:test0.c...
-gcc -o test0...
-
-test1:test1.c..
-gcc -o test1.c
-
-extra credit: calloc, extra text cases
-*/
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include "mymalloc.h"
+#define malloc(x) mymalloc(x)
+#define free(x) myfree(x)
 
-#define memSize (5000) //whole memory size
-#define blockSize (sizeof(struct blockMem)) //each block size
-#define numOfBlock (memSize/blockSize)
-#define malloc(x) mymalloc((x),__FILE__,__LINE__)//!!!!in .h file
 
-//use link list to access each block of memory
-struct blockMem{
-  int size; //size of the block
-  struct blockMem *next; //struct pointer within the block
-  int ifFree; //int value to check if the block is freed. 1 for yes and 0 for no
-};
+int main()
+{
+    int res,size,ch,j,i;
+    int *p;
+    cnt1=0;
+    cnt2=0;
+    total=5000;
+    available1=2500;
+    available2=2500;
+    for(i=0;i<5000;i++)
+       myblock[i]=0;
+    x=-1;
+    do
+    {
+         printf("Choose an action:\n1.Allocate Memory\n2.View Tables\n3.Free Memory\n4.Exit\nYour Choice:");
+         scanf("%d",&ch);
+         switch(ch)
+         {
+                   case 1:x=x+1;
+                          printf("Enter table name:");
+                          scanf("%s",name);
+                          strcpy(saved_names[x],name);
+                          printf("Enter size:");
+                          scanf("%d",&size);
+                          saved_sizes[x]=size;
+                          p=malloc(size);
+/*                          printf("\nWhats inside is:");
+                          if(size<100){
+                          for(i=pos;i<pos+size;i++)
+                             printf("pos[%d]=%d",i,*(p+i));
+                          printf("\n");
+                          }
+                          else{
+                          for(i=pos;i>pos-size;i--)
+                             printf("pos[%d]=%d",i,*(p+i));
+                          printf("\n");
+                          }
+*/
+                          if(size<100)
+                             cnt1=cnt1+size; 
+                          else
+                             cnt2=cnt2+size;  
+                          printf("Table created!\n");
+                          break;
+                   case 2:
+                          printf("Your tables:\n");
+                          for(j=0;j<=x;j++)
+                             if(saved_sizes[j]!=0)
+                                printf("%s with size:%d saved between %d and %d\n",saved_names[j],saved_sizes[j],saved_pos[j][0],saved_pos[j][1]);
+                          break;
+                   case 3:printf("Enter table's name you want to free:");
+                          scanf("%s",name);
+                          p=myblock;
+                          temp=-1;
+                          for(i=0;i<10;i++)
+                          {
+                             res=strcmp(saved_names[i],name);
+                             if(res==0)
+                             {
+                                temp=i;
+                                p=p+saved_pos[i][0];
+                             }
+                          }
+                          free(p);
+                          break;
+                   case 4:printf("Bye...");
+                          break;
+                   default:printf("Try again\n");
+                          break;                                      
+         }        
+    }while(ch!=4);
+    return 0;
+}                 
+                          
+int *mymalloc(int size)
+{
+    int *c;
+    int i;
+    int cnt_temp;
+    c=myblock;
+    if(size>total){
+        printf("Sorry not enough available memory");
+        exit(1);}
+    else if(((size>100) && (size>available1)) || ((size<100) && (size>available2))){
+         printf("Sorry not enough memory left");
+         exit(2);} 
+    else
+        if(size<100){
+                    cnt_temp=0;
+                    pos=cnt_temp+cnt1;
+                    saved_pos[x][0]=pos;
+                    saved_pos[x][1]=pos+size-1;
+                    for(i=pos;i<(pos+size);i++)
+                       *(c+i)=1;  
+                    available1=available1-size;                   
+                    return c;
+                    }
+        else{
+                    cnt_temp=4999;
+                    pos=cnt_temp-cnt2;
+                    saved_pos[x][0]=pos;
+                    saved_pos[x][1]=pos-size;
+                    for(i=pos;i>(pos-size);i--)
+                       myblock[i]=1;
+                    available2=available2-size;
+                    return c;
+            }
+} 
 
-void *head = numOfBlock;//head of the block, using linked list
-
-//check if have free block to re-use free space
-int freeBlock(){
-  int i;
-  for(i=0,i<numOfBlock,i++){
-    if(head==NULL)
-      return i; //return the index of the free block
-  }
+void myfree(int *p)
+{
+     int i,flag;
+     if(saved_sizes[temp]==0)
+        printf("Memory is already free\n");
+     flag=0;
+     if(temp==-1)
+        printf("There is no such array\n");
+     else
+     {
+     if(saved_sizes[temp]<100)
+     {
+        for(i=saved_pos[temp][0];i<=saved_pos[temp][1];i++)
+        {
+            if(*(p+i)==1){
+               *(p+i)=0;
+               flag=1;}
+        }
+        saved_sizes[temp]=0;
+     }
+     else
+     {
+        for(i=0;i<saved_sizes[temp];i++)
+        {
+            if(*(p-i)==1){
+               *(p-i)=0;
+               flag=1;}
+        }
+        saved_sizes[temp]=0;
+     }   
+     }   
+     if(flag==1)
+        printf("Memory has been freed\n");
 }
-
-static int firstCall=0; //global int to check if the memory has been called. 1 for yes and 0 for no
-
-void *mymalloc(unsigned int size, char *file, unsigned int line){
-  if(size==0){
-    printf("Fatal error in malloc call from line %d, in file %s\n", line, file);
-    return -1;
-  }
-
-
-  if(firstCall=0){//fist call
-    //use head for the beginning of the block
-    //creat the whole block
-    firstCall=1;
-  }
-
-  //now they have been initialized
-  //do stuff
-
-}
-
-void *myfree(){
-
-}
+     
