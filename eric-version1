@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #define malloc(x) mymalloc(x)
 #define free(x) myfree(x)
+
 
 int *mymalloc(int size);
 int myblock[5000];
@@ -65,7 +67,8 @@ int main()
                           scanf("%s",name);
                           p=myblock;
                           temp=-1;
-                          for(i=0;i<10;i++){
+                          for(i=0;i<10;i++)
+                          {
                              res=strcmp(saved_names[i],name);
                              if(res==0)
                              {
@@ -122,6 +125,8 @@ int *mymalloc(int size)
 void myfree(int *p)
 {
      int i,flag;
+     if(saved_sizes[temp]==0)
+        printf("Memory is already free\n");
      flag=0;
      if(temp==-1)
         printf("There is no such array\n");
@@ -134,26 +139,16 @@ void myfree(int *p)
             if(*(p+i)==1){
                *(p+i)=0;
                flag=1;}
-            else
-            {
-               printf("Memory is already free\n");
-               break;
-            } 
         }
         saved_sizes[temp]=0;
      }
      else
      {
-        for(i=saved_pos[temp][0];i>=saved_pos[temp][1];i--)
+        for(i=0;i<saved_sizes[temp];i++)
         {
-            if(*(p+i)==1){
-               *(p+i)=0;
+            if(*(p-i)==1){
+               *(p-i)=0;
                flag=1;}
-            else
-            {
-               printf("Memory is already free\n"); 
-               break;
-            }
         }
         saved_sizes[temp]=0;
      }   
