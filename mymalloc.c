@@ -1,13 +1,6 @@
 /*use __FILE__,__LINE__ */
-/*all: test0 test1 test2
-test:test0.c...
-gcc -o test0...
-
-test1:test1.c..
-gcc -o test1.c
-
-extra credit: calloc, extra text cases
-*/
+/*all: test0 test1 test2......*/
+//extra credit for calloc
 
 #include <string.h>
 #include "mymalloc.h" 
@@ -145,20 +138,7 @@ void *mycalloc(int cal, unsigned int size, char *file, int line){
 		return ptr;
 	}
 }
-//--------------extra credit: realloc--------------//
-void *myrealloc(void *p, unsigned int size, char *file, int line){
-	void *rea;
-	rea = mymalloc(size, file, line);
-	if(!p){ 
-		printf("error: realloc to NULL from line: %d in file: %s.\n", file, line); 
-		return(-1);
-	}
-	else if(p){
-		memcpy(rea, p, size);
-		myfree(p, file, line);
-	}
-	return rea;
-}
+
 //-------------------------------------------------
 
 
